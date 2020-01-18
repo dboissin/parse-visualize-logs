@@ -3,12 +3,12 @@
 
 import re
 from dfchart.viz import generate_charts
+from gzip import open as gzopen
+import sys
 
 pattern = re.compile(".*?\[([A-Za-z0-9\/:+\s]+)\]\s\"(.*?)\"\s([0-9]+)\s[0-9]+\s\".*?\"\s\".*?\"rt=([0-9]+\.[0-9]+)\s.*?urt=\"([0-9\.\-,\s]+)\"")
 
-# parse nginx log file
-ranges = {}
-with open('logs/access.log') as f:
+def parse_lines(f, ranges):
     line = f.readline()
     while line:
         m = pattern.match(line)
@@ -29,6 +29,20 @@ with open('logs/access.log') as f:
         else:
             print("pattern doesn't match : %s" % line)
         line = f.readline()
+
+def parse_file(path):
+    ranges = {}
+    if '.gz' in path:
+         with gzopen(path, 'rt') as f:
+             parse_lines(f, ranges)
+    else:
+        with open(path) as f:
+            parse_lines(f, ranges)
+    return ranges
+
+
+# parse nginx log file
+ranges = parse_file(sys.argv[1])
 
 # create dataframe and generate charts
 generate_charts(ranges)

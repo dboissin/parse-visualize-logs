@@ -44,11 +44,21 @@ time python analyse-logs-c.py
 Temps d'executions
 -----------------
 
+### Fichier non compressé
+
 | Version | Real | User | Sys |
 |---------|------|------|-----|
 | python seul | 0m59.501s | 0m56.596s | 0m2.996s |
 | python regex | 2m3.489s | 2m0.864s | 0m3.208s |
 | python + extension C pour le parsing des logs | 0m11.470s | 0m7.168s | 0m3.292s |
+
+### Fichier gzip
+
+| Version | Real | User | Sys |
+|---------|------|------|-----|
+| python seul | 1m32.350s | 1m32.392s | 0m1.308s |
+| python regex | 2m54.655s | 2m54.508s | 0m1.352s |
+| python + extension C pour le parsing des logs | 0m17.284s | 0m17.568s | 0m0.968s |
 
 Résultat
 --------

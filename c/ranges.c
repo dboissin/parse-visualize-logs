@@ -1,6 +1,6 @@
 #include "ranges.h"
 
-Ranges* createRangesList() {
+Ranges* createRangesList(void) {
     Ranges *ranges;
     ranges = malloc(sizeof(Ranges));
     ranges->head = 0;

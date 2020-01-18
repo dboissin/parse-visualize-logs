@@ -1,49 +1,61 @@
 #include "parse.h"
 
-Ranges *parseFile(char *path) {
-    FILE *fp;
-    char line[BUFF_LENGTH];
+static void parseLine(char *line, Ranges *ranges) {
     Range *currRange;
+    char *dateIdx, *rtIdx, *statusIdx, *urtIdx;
     char statusCode[4];
     char rt[6];
     char currDate[DATE_RANGE_LENGTH + 1];
-    Ranges *ranges;
-    char *dateIdx, *rtIdx, *statusIdx, *urtIdx;
 
-    ranges = createRangesList();
     currDate[DATE_RANGE_LENGTH] = '\0';
     statusCode[3] = '\0';
     rt[5] = '\0';
 
-    fp = fopen(path, "rt");
-    while (fgets(line, BUFF_LENGTH, fp) != NULL) {
-        dateIdx = strchr(line, '[') + 1;
-        rtIdx = strstr(line, "\"rt=") + 4;
-        statusIdx = strstr(line, "\" ") + 2;
+    dateIdx = strchr(line, '[') + 1;
+    rtIdx = strstr(line, "\"rt=") + 4;
+    statusIdx = strstr(line, "\" ") + 2;
 
-        strncpy(currDate, dateIdx, DATE_RANGE_LENGTH);
-        currRange = getRangeCreateIfNotExists(ranges, currDate);
+    strncpy(currDate, dateIdx, DATE_RANGE_LENGTH);
+    currRange = getRangeCreateIfNotExists(ranges, currDate);
 
-        strncpy(rt, rtIdx, 5);
+    strncpy(rt, rtIdx, 5);
 
-        strncpy(statusCode, statusIdx, 3);
-        if (atoi(statusCode) > ERROR_CODE_LIMIT) {
-            currRange->errCount++;
-            currRange->errRtSum += atof(rt);
+    strncpy(statusCode, statusIdx, 3);
+    if (atoi(statusCode) > ERROR_CODE_LIMIT) {
+        currRange->errCount++;
+        currRange->errRtSum += atof(rt);
+    } else {
+        urtIdx = strstr(line, "urt=\"") + 5;
+        if (*urtIdx == '-') {
+            currRange->staticCount++;
+            currRange->staticRtSum += atof(rt);
         } else {
-            urtIdx = strstr(line, "urt=\"") + 5;
-            if (*urtIdx == '-') {
-                currRange->staticCount++;
-                currRange->staticRtSum += atof(rt);
-            } else {
-                currRange->upstreamCount++;
-                currRange->upstreamRtSum += atof(rt);
-            }
+            currRange->upstreamCount++;
+            currRange->upstreamRtSum += atof(rt);
         }
     }
-    fclose(fp);
+}
 
-    return ranges;
+static void parseFile(char *path, Ranges *ranges) {
+    FILE *fp;
+    char line[BUFF_LENGTH];
+
+    fp = fopen(path, "rt");
+    while (fgets(line, BUFF_LENGTH, fp) != NULL) {
+        parseLine(line, ranges);
+    }
+    fclose(fp);
+}
+
+static void parseGzFile(char *path, Ranges *ranges) {
+    gzFile fp;
+    char line[BUFF_LENGTH];
+
+    fp = gzopen(path, "rt");
+    while (gzgets(fp, line, BUFF_LENGTH) != NULL) {
+        parseLine(line, ranges);
+    }
+    gzclose(fp);
 }
 
 PyObject * parse(PyObject *self, PyObject *args) {
@@ -54,7 +66,13 @@ PyObject * parse(PyObject *self, PyObject *args) {
 		return NULL;
     }
 
-    ranges = parseFile(path);
+    ranges = createRangesList();
+
+    if (strstr(path, ".gz") != NULL) {
+        parseGzFile(path, ranges);
+    } else {
+        parseFile(path, ranges);
+    }
 
     PyObject* dict = PyDict_New();
 
@@ -80,7 +98,7 @@ PyObject * parse(PyObject *self, PyObject *args) {
 int main(int argc, char **argv) {
     Range* range;
     Ranges* ranges;
-    ranges = parseFile("logs/access.log");
+    ranges = parseGzFile("../logs/access.log.gz");
     range = ranges->head;
     while (range != NULL) {
         printf("%s,%d,%f,%d,%f,%d,%f\n",

@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from dfchart.viz import generate_charts
+from gzip import open as gzopen
+import sys
 
-# parse nginx log file
-ranges = {}
-with open('logs/access.log') as f:
+def parse_lines(f, ranges):
     line = f.readline()
     while line:
         idx = line.index('[') + 1
@@ -26,6 +26,20 @@ with open('logs/access.log') as f:
         r[prefix_type + '_count'] += 1
         r[prefix_type + '_rt_sum'] += float(line[rtidx:rtidx+6])
         line = f.readline()
+
+def parse_file(path):
+    ranges = {}
+    if '.gz' in path:
+         with gzopen(path, 'rt') as f:
+             parse_lines(f, ranges)
+    else:
+        with open(path) as f:
+            parse_lines(f, ranges)
+    return ranges
+
+
+# parse nginx log file
+ranges = parse_file(sys.argv[1])
 
 # create dataframe and generate charts
 generate_charts(ranges)

@@ -20,7 +20,7 @@ typedef struct ranges {
   Range* last;
 } Ranges;
 
-Ranges* createRangesList();
+Ranges* createRangesList(void);
 
 void destroyRangesList(Ranges* list);
 
