@@ -1,6 +1,8 @@
+extern crate flate2;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader};
+use flate2::read::GzDecoder;
 
 #[derive(Copy, Clone)]
 struct Range {
@@ -53,15 +55,6 @@ fn parse_line(line: &str, ranges: &mut HashMap<String, Range>) -> Option<usize> 
         ranges.insert(curr_date.to_owned(), Range::new());
     }
     let range = ranges.get_mut(&curr_date)?;
-    // let mut nr: Range;
-    // let range = match ranges.get_mut(&curr_date as &str) {
-    //     Some(r) => r,
-    //     _ => {
-    //         nr = Range::new();
-    //         ranges.insert(curr_date, nr);
-    //         &mut nr
-    //     },
-    // };
 
     let rt: f32 = line.chars().skip(rt_idx).take(5).collect::<String>().parse::<f32>().ok()?;
     let status: i32 = line.chars().skip(status_idx).take(3).collect::<String>().parse::<i32>().ok()?;
@@ -77,14 +70,32 @@ fn parse_line(line: &str, ranges: &mut HashMap<String, Range>) -> Option<usize> 
 }
 
 fn parse_file(path: &str, ranges: &mut HashMap<String, Range>) -> io::Result<()> {
-    let file = File::open(path)?;
-    let reader = BufReader::new(file);
+    let mut line = String::with_capacity(4096);
+    let mut reader = BufReader::new(File::open(path)?);
 
-    for line in reader.lines() {
-        match parse_line(&line?, ranges) {
-            None => println!("Ignored line"),
-            _ => (),
-        };
+    loop {
+        line.clear();
+        let r = reader.read_line(&mut line);
+        if r.is_err() || r? == 0 {
+            break;
+        }
+        parse_line(&line, ranges);
+    }
+
+    Ok(())
+}
+
+fn parse_gz_file(path: &str, ranges: &mut HashMap<String, Range>) -> io::Result<()> {
+    let mut line = String::with_capacity(4096);
+    let mut reader = BufReader::new(GzDecoder::new(File::open(path)?));
+
+    loop {
+        line.clear();
+        let r = reader.read_line(&mut line);
+        if r.is_err() || r? == 0 {
+            break;
+        }
+        parse_line(&line, ranges);
     }
 
     Ok(())
@@ -92,7 +103,12 @@ fn parse_file(path: &str, ranges: &mut HashMap<String, Range>) -> io::Result<()>
 
 fn main() {
     let mut ranges: HashMap<String, Range> = HashMap::new();
-    parse_file("../../logs/access.log", &mut ranges);
+    let path = "../../logs/access.log.gz";
+    if path.ends_with(".gz") {
+        parse_gz_file(path, &mut ranges);
+    } else {
+        parse_file(path, &mut ranges);
+    }
     for (k, v) in &ranges {
         println!("{},{},{},{},{},{},{}", k, v.upstream_count, v.upstream_rt_sum,
                 v.static_count, v.static_rt_sum, v.err_count, v.err_rt_sum);
