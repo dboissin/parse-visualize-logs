@@ -17,7 +17,7 @@ df = pd.read_csv('logs/access.log',
         header=None)
 ```
 
-Nous cherchons à visualiser le nombre de requêtes (applicatives, fichiers statiques et en erreurs) et le temps de réponse moyen. Nous allons faire une aggrégation des requêtes par tranches de dix minutes et les stocker dans un dictionnaire python qui pourra être chargé dans un DataFrame Pandas.
+Nous cherchons à visualiser le nombre de requêtes (applicatives, fichiers statiques et en erreurs) et le temps de réponse moyen. Nous allons faire une aggrégation des requêtes par tranches d'une minute et les stocker dans un dictionnaire python qui pourra être chargé dans un DataFrame Pandas.
 
 Installation
 ------------
@@ -33,12 +33,12 @@ Execution
 ---------
 
 ```bash
-time python analyse-logs-fullpy.py
-time python analyse-logs-regex.py
+time python analyse-logs-fullpy.py logs/access.log.gz
+time python analyse-logs-regex.py  logs/access.log.gz
 cd c
 make
 cd ..
-time python analyse-logs-c.py
+time python analyse-logs-c.py  logs/access.log.gz
 ```
 
 Temps d'executions
@@ -48,17 +48,17 @@ Temps d'executions
 
 | Version | Real | User | Sys |
 |---------|------|------|-----|
-| python seul | 0m59.501s | 0m56.596s | 0m2.996s |
-| python regex | 2m3.489s | 2m0.864s | 0m3.208s |
-| python + extension C pour le parsing des logs | 0m11.470s | 0m7.168s | 0m3.292s |
+| python seul | 0m50.854s | 0m48.464s | 0m3.296s |
+| python regex | 1m51.732s | 1m49.416s | 0m3.044s |
+| python + extension C pour le parsing des logs | 0m13.125s | 0m8.208s | 0m3.496s |
 
 ### Fichier gzip
 
 | Version | Real | User | Sys |
 |---------|------|------|-----|
-| python seul | 1m32.350s | 1m32.392s | 0m1.308s |
-| python regex | 2m54.655s | 2m54.508s | 0m1.352s |
-| python + extension C pour le parsing des logs | 0m17.284s | 0m17.568s | 0m0.968s |
+| python seul | 1m9.016s | 1m9.088s | 0m1.256s |
+| python regex | 2m11.410s | 2m11.484s | 0m1.396s |
+| python + extension C pour le parsing des logs | 0m17.375s | 0m17.380s | 0m1.280s |
 
 Résultat
 --------

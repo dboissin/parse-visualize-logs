@@ -13,7 +13,7 @@ def parse_lines(f, ranges):
     while line:
         m = pattern.match(line)
         if m:
-            curr_range = m.group(1)[0:16]
+            curr_range = m.group(1)[0:17]
             if not(curr_range in ranges):
                 ranges[curr_range] = { 'upstream_count' : 0, 'upstream_rt_sum' : 0.0, 'static_count' : 0, 'static_rt_sum' : 0.0, 'err_count' : 0, 'err_rt_sum' : 0.0 }
             r = ranges[curr_range]

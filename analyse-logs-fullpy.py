@@ -11,7 +11,7 @@ def parse_lines(f, ranges):
         idx = line.index('[') + 1
         rtidx = line.index('"rt=') + 4
         statusidx = line.index('" ') + 2
-        curr_range = line[idx:idx+16]
+        curr_range = line[idx:idx+17]
         if not(curr_range in ranges):
             ranges[curr_range] = { 'upstream_count' : 0, 'upstream_rt_sum' : 0.0, 'static_count' : 0, 'static_rt_sum' : 0.0, 'err_count' : 0, 'err_rt_sum' : 0.0 }
         r = ranges[curr_range]
