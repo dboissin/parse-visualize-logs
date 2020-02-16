@@ -1,9 +1,14 @@
 package main
 
+// #cgo pkg-config: python3
+// #include <python3.5m/Python.h>
+// int PyArg_ParseTuple_S(PyObject * args, char** a);
+// PyObject * Py_BuildValue_I(int a);
+// PyObject * Py_BuildValue_F(float a);
+import "C"
 import (
 	"bufio"
 	"compress/gzip"
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -23,7 +28,7 @@ func parseLine(line string, ranges map[string]*Range) {
 	dateIdx := strings.Index(line, "[") + 1
 	rtIdx := strings.Index(line, "\"rt=") + 4
 	statusIdx := strings.Index(line, "\" ") + 2
-	currDate := line[dateIdx : dateIdx+16]
+	currDate := line[dateIdx : dateIdx+17]
 
 	var r = ranges[currDate]
 	if r == nil {
@@ -83,13 +88,30 @@ func parseFile(path string, ranges map[string]*Range) {
 	}
 }
 
-func main() {
-	ranges := make(map[string]*Range)
-	parseFile("../logs/access.log.gz", ranges)
+//export parse
+func parse(self, args *C.PyObject) *C.PyObject {
+	var path *C.char;
+	ranges := make(map[string]*Range);
+
+	if C.PyArg_ParseTuple_S(args, &path) == 0 {
+		return nil;
+    }
+
+    parseFile(C.GoString(path), ranges)
+
+    dict := C.PyDict_New();
 	for k, r := range ranges {
-		fmt.Printf("%s,%d,%f,%d,%f,%d,%f\n",
-			k, r.upstreamCount, r.upstreamRtSum,
-			r.staticCount, r.staticRtSum, r.errCount,
-			r.errRtSum)
+		d := C.PyDict_New();
+		C.PyDict_SetItemString(d, C.CString("upstream_count"), C.Py_BuildValue_I(C.int(r.upstreamCount)));
+        C.PyDict_SetItemString(d, C.CString("static_count"), C.Py_BuildValue_I(C.int(r.staticCount)));
+        C.PyDict_SetItemString(d, C.CString("err_count"), C.Py_BuildValue_I(C.int(r.errCount)));
+        C.PyDict_SetItemString(d, C.CString("upstream_rt_sum"), C.Py_BuildValue_F(C.float(r.upstreamRtSum)));
+        C.PyDict_SetItemString(d, C.CString("static_rt_sum"), C.Py_BuildValue_F(C.float(r.staticRtSum)));
+        C.PyDict_SetItemString(d, C.CString("err_rt_sum"), C.Py_BuildValue_F(C.float(r.errRtSum)));
+        C.PyDict_SetItemString(dict, C.CString(k), d);
 	}
+
+	return dict
 }
+
+func main() {}

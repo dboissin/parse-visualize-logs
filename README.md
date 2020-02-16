@@ -34,15 +34,19 @@ Execution
 
 ```bash
 time python analyse-logs-fullpy.py logs/access.log.gz
-time python analyse-logs-regex.py  logs/access.log.gz
+time python analyse-logs-regex.py logs/access.log.gz
 cd c
 make
 cd ..
-time python analyse-logs-c.py  logs/access.log.gz
+time python analyse-logs-c.py logs/access.log.gz
+cd go
+make
+cd ..
+time python analyse-logs-go.py logs/access.log.gz
 ```
 
 Temps d'executions
------------------
+------------------
 
 ### Fichier non compressé
 
@@ -51,6 +55,7 @@ Temps d'executions
 | python seul | 0m50.854s | 0m48.464s | 0m3.296s |
 | python regex | 1m51.732s | 1m49.416s | 0m3.044s |
 | python + extension C pour le parsing des logs | 0m13.125s | 0m8.208s | 0m3.496s |
+| python + extension Go pour le parsing des logs | 0m14.118s | 0m11.556s | 0m4.116s |
 
 ### Fichier gzip
 
@@ -59,6 +64,7 @@ Temps d'executions
 | python seul | 1m9.016s | 1m9.088s | 0m1.256s |
 | python regex | 2m11.410s | 2m11.484s | 0m1.396s |
 | python + extension C pour le parsing des logs | 0m17.375s | 0m17.380s | 0m1.280s |
+| python + extension Go pour le parsing des logs | 0m21.743s |  0m22.936s | 0m1.500s |
 
 Résultat
 --------
