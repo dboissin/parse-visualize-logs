@@ -43,6 +43,10 @@ cd go
 make
 cd ..
 time python analyse-logs-go.py logs/access.log.gz
+cd rust/parse_logs
+cargo build --release
+cd ../..
+time python analyse-logs-rust.py logs/access.log.gz
 ```
 
 Temps d'executions
@@ -56,6 +60,7 @@ Temps d'executions
 | python regex | 1m51.732s | 1m49.416s | 0m3.044s |
 | python + extension C pour le parsing des logs | 0m13.125s | 0m8.208s | 0m3.496s |
 | python + extension Go pour le parsing des logs | 0m14.118s | 0m11.556s | 0m4.116s |
+| python + extension Rust pour le parsing des logs | 0m30.097s | 0m27.524s | 0m3.008s |
 
 ### Fichier gzip
 
@@ -65,6 +70,7 @@ Temps d'executions
 | python regex | 2m11.410s | 2m11.484s | 0m1.396s |
 | python + extension C pour le parsing des logs | 0m17.375s | 0m17.380s | 0m1.280s |
 | python + extension Go pour le parsing des logs | 0m21.743s |  0m22.936s | 0m1.500s |
+| python + extension Rust pour le parsing des logs | 0m34.038s |  0m34.176s | 0m1.212s |
 
 Résultat
 --------

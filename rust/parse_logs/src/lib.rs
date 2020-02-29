@@ -1,8 +1,16 @@
+extern crate cpython;
 extern crate flate2;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, prelude::*, BufReader};
 use flate2::read::GzDecoder;
+use cpython::{PyResult, Python, py_module_initializer, py_fn, PyDict};
+
+py_module_initializer!(libparse, initlibparse, PyInit_libparse, |py, m| {
+    m.add(py, "__doc__", "This module is implemented in Rust.")?;
+    m.add(py, "parse", py_fn!(py, parse_py(path: &str)))?;
+    Ok(())
+});
 
 #[derive(Copy, Clone)]
 struct Range {
@@ -49,7 +57,7 @@ fn parse_line(line: &str, ranges: &mut HashMap<String, Range>) -> Option<usize> 
     let rt_idx:usize = line.find("\"rt=")? + 4;
     let status_idx:usize = line.find("\" ")? + 2;
 
-    let curr_date: String = line.chars().skip(date_idx).take(16).collect();
+    let curr_date: String = line.chars().skip(date_idx).take(17).collect();
 
     if !ranges.contains_key(&curr_date) {
         ranges.insert(curr_date.to_owned(), Range::new());
@@ -101,17 +109,42 @@ fn parse_gz_file(path: &str, ranges: &mut HashMap<String, Range>) -> io::Result<
     Ok(())
 }
 
-fn main() {
+fn parse_py(py: Python, path: &str) -> PyResult<PyDict> {
     let mut ranges: HashMap<String, Range> = HashMap::new();
-    let path = "../../logs/access.log.gz";
     if path.ends_with(".gz") {
         parse_gz_file(path, &mut ranges);
     } else {
         parse_file(path, &mut ranges);
     }
+
+    let res = PyDict::new(py);
     for (k, v) in &ranges {
-        println!("{},{},{},{},{},{},{}", k, v.upstream_count, v.upstream_rt_sum,
-                v.static_count, v.static_rt_sum, v.err_count, v.err_rt_sum);
+        let d = PyDict::new(py);
+        d.set_item(py, "upstream_count", v.upstream_count)?;
+        d.set_item(py, "static_count", v.static_count)?;
+        d.set_item(py, "err_count", v.err_count)?;
+        d.set_item(py, "upstream_rt_sum", v.upstream_rt_sum)?;
+        d.set_item(py, "static_rt_sum", v.static_rt_sum)?;
+        d.set_item(py, "err_rt_sum", v.err_rt_sum)?;
+        res.set_item(py, k, d)?;
+
+        // println!("{},{},{},{},{},{},{}", k, v.upstream_count, v.upstream_rt_sum,
+        //         v.static_count, v.static_rt_sum, v.err_count, v.err_rt_sum);
     }
+    Ok(res)
 }
+
+// fn main() {
+    // let mut ranges: HashMap<String, Range> = HashMap::new();
+    // let path = "../../logs/access.log.gz";
+    // if path.ends_with(".gz") {
+    //     parse_gz_file(path, &mut ranges);
+    // } else {
+    //     parse_file(path, &mut ranges);
+    // }
+    // for (k, v) in &ranges {
+    //     println!("{},{},{},{},{},{},{}", k, v.upstream_count, v.upstream_rt_sum,
+    //             v.static_count, v.static_rt_sum, v.err_count, v.err_rt_sum);
+    // }
+// }
 
