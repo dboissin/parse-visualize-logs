@@ -5,6 +5,7 @@ package main
 // int PyArg_ParseTuple_S(PyObject * args, char** a);
 // PyObject * Py_BuildValue_I(int a);
 // PyObject * Py_BuildValue_F(float a);
+// PyObject * Py_BuildValue_S(char* s);
 import "C"
 import (
 	"bufio"
@@ -16,6 +17,8 @@ import (
 )
 
 type Range struct {
+	datetime string
+	prefix string
 	staticCount   int32
 	upstreamCount int32
 	errCount      int32
@@ -25,15 +28,30 @@ type Range struct {
 }
 
 func parseLine(line string, ranges map[string]*Range) {
+	var prefix string
 	dateIdx := strings.Index(line, "[") + 1
 	rtIdx := strings.Index(line, "\"rt=") + 4
 	statusIdx := strings.Index(line, "\" ") + 2
-	currDate := line[dateIdx : dateIdx+17]
+	prefixIdx := strings.Index(line, " /") + 2
+	endUriIdx := strings.Index(line, " HTTP/")
 
-	var r = ranges[currDate]
+	currDate := line[dateIdx : dateIdx+17]
+	if prefixIdx > 1 && endUriIdx > 0 {
+		uri := line[prefixIdx:endUriIdx]
+		endPrefixIdx := strings.Index(uri, "/")
+		if endPrefixIdx > 0 {
+			prefix = uri[0:endPrefixIdx]
+		} else {
+			prefix = "/"
+		}
+	} else {
+		prefix = "/"
+	}
+
+	var r = ranges[currDate + prefix]
 	if r == nil {
-		r = &(Range{0, 0, 0, 0.0, 0.0, 0.0})
-		ranges[currDate] = r
+		r = &(Range{currDate, prefix, 0, 0, 0, 0.0, 0.0, 0.0})
+		ranges[currDate + prefix] = r
 	}
 
 	rt, err := strconv.ParseFloat(line[rtIdx:rtIdx+5], 64)
@@ -102,6 +120,8 @@ func parse(self, args *C.PyObject) *C.PyObject {
     dict := C.PyDict_New();
 	for k, r := range ranges {
 		d := C.PyDict_New();
+		C.PyDict_SetItemString(d, C.CString("datetime"), C.Py_BuildValue_S(C.CString(r.datetime)));
+		C.PyDict_SetItemString(d, C.CString("prefix"), C.Py_BuildValue_S(C.CString(r.prefix)));
 		C.PyDict_SetItemString(d, C.CString("upstream_count"), C.Py_BuildValue_I(C.int(r.upstreamCount)));
         C.PyDict_SetItemString(d, C.CString("static_count"), C.Py_BuildValue_I(C.int(r.staticCount)));
         C.PyDict_SetItemString(d, C.CString("err_count"), C.Py_BuildValue_I(C.int(r.errCount)));

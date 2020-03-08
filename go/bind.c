@@ -12,6 +12,10 @@ PyObject * Py_BuildValue_F(float a) {
 	return Py_BuildValue("f", a);
 }
 
+PyObject * Py_BuildValue_S(char* s) {
+	return Py_BuildValue("s", s);
+}
+
 PyObject * parse(PyObject *, PyObject *);
 
 PyMethodDef funcs[] = {
